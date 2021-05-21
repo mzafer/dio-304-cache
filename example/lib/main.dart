@@ -14,8 +14,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String responseData = '';
-  int statusCode;
+  String? responseData = '';
+  int? statusCode;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
                 ),
                 Text('Status code: ${statusCode ?? ''}'),
                 Text('responseData:'),
-                Text(responseData),
+                Text(responseData!),
               ],
             ),
           ),

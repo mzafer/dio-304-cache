@@ -31,33 +31,33 @@ class Cache304Interceptor extends Interceptor {
   static const primaryKeyListKey = '@dio_304_cache_primary_key_list_key@';
 
   @override
-  Future onRequest(RequestOptions options) async {
+  Future onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     await _checkToAddIfModifiedSince(options);
-    return options;
+    return super.onRequest(options, handler);
   }
 
   @override
-  Future onResponse(Response response) async {
-    if (response.request.method.toUpperCase() == 'GET') {
+  Future onResponse(Response response,ResponseInterceptorHandler handler) async {
+    if (response.requestOptions.method.toUpperCase() == 'GET') {
       final lastModified = response.headers.value(lastModifiedKey);
 
       // check if need to push to cache
       if (response.data != null &&
           lastModified != null &&
-          (response.statusCode >= 200 && response.statusCode <= 300)) {
-        _pushToCache(response.data, lastModified, response.request);
+          (response.statusCode! >= 200 && response.statusCode! <= 300)) {
+        _pushToCache(response.data, lastModified, response.requestOptions);
       }
 
       // take data from cache if 304
       if (response.statusCode == 304) await _appendDataTo304Response(response);
     }
 
-    return super.onResponse(response);
+    return super.onResponse(response, handler);
   }
 
-  Future onError(DioError err) async {
-    if (err?.response?.statusCode == 304 &&
-        err.request.method.toUpperCase() == 'GET')
+  Future onError(DioError err,ErrorInterceptorHandler handler) async {
+    /* if (err.response?.statusCode == 304 &&
+        err.requestOptions.method.toUpperCase() == 'GET')
       return onResponse(
         Response(
           headers: err?.response?.headers,
@@ -65,8 +65,8 @@ class Cache304Interceptor extends Interceptor {
           request: err.request,
         ),
       );
-
-    return super.onError(err);
+ */
+    return super.onError(err, handler);
   }
 
   Future<void> _checkToAddIfModifiedSince(RequestOptions options) async {
@@ -128,7 +128,7 @@ class Cache304Interceptor extends Interceptor {
 
   Future<void> _appendDataTo304Response(Response response) async {
     final cacheBox = await _Cache304InterceptorStaticFields.getCachedBox();
-    final primaryKey = _getPrimaryKeyFromOptions(response.request);
+    final primaryKey = _getPrimaryKeyFromOptions(response.requestOptions);
     final cacheItem = cacheBox.get(primaryKey);
     if (cacheItem == null || cacheItem[dataKey] == null) return;
     response.data = cacheItem[dataKey];
@@ -150,7 +150,7 @@ class Cache304Interceptor extends Interceptor {
   }
 
   String _getPrimaryKeyFromOptions(RequestOptions options) {
-    final uri = options.uri;
+    final Uri? uri = options.uri;
     final data = options.data;
     return "${uri?.host}${uri?.path}_${data?.toString()}_${uri?.query}";
   }
@@ -178,7 +178,7 @@ class Cache304Interceptor extends Interceptor {
 
 ////////////////////////////////////////////////////////////////////////////
 // init hive database and set interceptor config
-Future<void> initCache304Interceptor({Cache304Config config}) async {
+Future<void> initCache304Interceptor({Cache304Config? config}) async {
   if (config != null && config.cacheLength != null) {
     _Cache304InterceptorStaticFields.cacheLength = config.cacheLength;
   }
