@@ -11,7 +11,7 @@ class _Cache304InterceptorStaticFields {
 
   static Future<Box> getCachedBox() async {
     openBoxCount += 1;
-    if (openBoxCount == 1) return await Hive.openBox(cacheBoxName);
+    if (openBoxCount == 1 || ! Hive.isBoxOpen(cacheBoxName)) return await Hive.openBox(cacheBoxName);
     return Hive.box(cacheBoxName);
   }
 
